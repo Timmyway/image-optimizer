@@ -1,19 +1,32 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QGridLayout, QFileDialog, QMessageBox
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QGuiApplication, QIcon
 from PyQt6.QtCore import QPoint, QDir, pyqtSignal
 from PyQt6 import uic
 # Built-in module :
-import sys
+import sys, os
 
 from core.optimizer import ImageOptimizer
 from ui_util import msg_box, open_folder
+
+basedir = os.path.dirname(__file__)
+
+def resourcePath(relativePath):
+	""" Get absolute path to resource, works for dev and for PyInstaller """
+	try:
+		# PyInstaller creates a temp folder and stores path in _MEIPASS
+		basePath = sys._MEIPASS
+	except Exception:
+		basePath = os.path.abspath(".")
+
+	print('=====>', os.path.join(basePath, relativePath))	
+	return os.path.join(basePath, relativePath)
 
 class App(QMainWindow):
 	signalProgression = pyqtSignal(int, name='update')
 
 	def __init__(self, parent=None, title='Image optimizer'):
 		super(App, self).__init__(parent)
-		uic.loadUi('look.ui', self)
+		uic.loadUi(resourcePath('look.ui'), self)
 		self.title = title
 		# The following config method helps us to set all default behaviours
 		self.config()
@@ -77,6 +90,7 @@ class App(QMainWindow):
 		
 def main(): 
 	app = QApplication(sys.argv)
+	app.setWindowIcon(QIcon(resourcePath('fav.ico')))
 	form = App()
 	form.show()
 	sys.exit(app.exec())
