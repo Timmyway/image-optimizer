@@ -1,3 +1,4 @@
+from pathlib import Path
 from PyQt6.QtGui import QTextCursor, QFont
 from PyQt6.QtCore import pyqtSignal, QObject, QTimer
 from PyQt6.QtWidgets import QSizePolicy, QTreeWidgetItem, QMessageBox, QFileDialog
@@ -6,7 +7,6 @@ import webbrowser
 import os
 import time
 from datetime import datetime, timedelta
-from custom_widgets.custom_widgets import TimedMessageBox
 
 def is_visible(visible, widget):
 	''' Set widget visibility according to a variable state '''
@@ -15,8 +15,17 @@ def is_visible(visible, widget):
 	else:		
 		widget.setVisible(False)
 
-def msg_box(msg_text="", msg_title="", msg_type=QMessageBox.Icon.Information, need_value=False, option_1=QMessageBox.Ok, 
-		option_2=QMessageBox.Cancel, autoclose=False, timeout=3000, detailed_text=False):
+class TimedMessageBox(QMessageBox):
+	"""docstring for TimedMessageBox"""
+	def __init__(self):
+		super(TimedMessageBox, self).__init__()
+		pass
+
+	def countdown_close(self, timeout=3000):
+		QTimer.singleShot(timeout, lambda: self.close())
+
+def msg_box(msg_text="", msg_title="", msg_type=QMessageBox.Icon.Information, need_value=False, option_1=QMessageBox.StandardButton.Ok, 
+		option_2=QMessageBox.StandardButton.Cancel, autoclose=False, timeout=3000, detailed_text=False):
 		''' 
 			Custom Message box popup => Bgcolor changed according to message type.
 			4 levels: WARNING, CRITICAL, INFORMATION, QUESTION
@@ -39,7 +48,7 @@ def msg_box(msg_text="", msg_title="", msg_type=QMessageBox.Icon.Information, ne
 		'''
 		style = {
 			'information': style_master.format(
-				msg_bgcolor='#34cb47', msg_color='#468847', btn_bgcolor='#333333', btn_border_radius='8px', 
+				msg_bgcolor='#34cb47', msg_color='#468847', btn_bgcolor='#333333', btn_border_radius='8px',
 				btn_color='#FDFDFD', btn_bgcolor_onhover='#123456', btn_color_onhover='#F3F3F3',
 				font_size='17px'),
 
@@ -57,38 +66,65 @@ def msg_box(msg_text="", msg_title="", msg_type=QMessageBox.Icon.Information, ne
 				msg_bgcolor='#ebcece', msg_color='#b94a48', btn_bgcolor='#333333', btn_border_radius='8px', 
 				btn_color='#FDFDFD', btn_bgcolor_onhover='#123456', btn_color_onhover='#F3F3F3',
 				font_size='17px')
-		}		
+		}
 		msg = TimedMessageBox()
 		if detailed_text:
 			msg.setDetailedText(msg_text)
 		else:
 			msg.setText(msg_text)
 		msg.setWindowTitle(msg_title)
+		print(msg_type)
 		if need_value:
 			msg.setStandardButtons(option_1 | option_2)
-		if msg_type == 1:
+		if msg_type.value == 1:
 			msg.setStyleSheet(style['information'])
 			print('Information mode')
-			msg.setIcon(QMessageBox.Information)		
-		elif msg_type == 2:
+			msg.setIcon(QMessageBox.Icon.Information)		
+		elif msg_type.value == 2:
 			msg.setStyleSheet(style['warning'])
-			msg.setIcon(QMessageBox.Warning)
+			msg.setIcon(QMessageBox.Icon.Warning)
 			print('Warning mode')
-		elif msg_type == 3:
+		elif msg_type.value == 3:
 			msg.setStyleSheet(style['critical'])
-			msg.setIcon(QMessageBox.Critical)
+			msg.setIcon(QMessageBox.Icon.Critical)
 			print('Critical mode')
-		elif msg_type == 4:
+		elif msg_type.value == 4:
 			msg.setStyleSheet(style['question'])
-			msg.setIcon(QMessageBox.Information)
+			msg.setIcon(QMessageBox.Icon.Information)
 			print('Question mode')
 
 		msg.show()
 		if autoclose:
 			msg.countdown_close(timeout)
-		retval = msg.exec_()
+		retval = msg.exec()
 		print(retval)
 		return retval
+
+def create_dirs(path, erase_if_exits=False):
+	dir_path = Path(path)
+	# Create path directory
+	try:
+		Path(dir_path).mkdir(parents=True, exist_ok=erase_if_exits)
+		return 1
+	except FileExistsError as e:
+		print(e)
+		return None
+
+	except PermissionError as e:
+		print(e)
+		return None	
+
+def open_folder(path=''):
+	if path is None:
+		return
+	p = Path(path)
+	# Open app directory if no path is provided
+	if not path:
+		current_dir = Path.cwd()
+		webbrowser.open(current_dir)
+	else:
+		create_dirs(p)
+		webbrowser.open(str(p))
 
 def delay_action(action, callback, timeout=3000):		
 	try:			
