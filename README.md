@@ -1,7 +1,7 @@
 # image-optimizer
 # Read Me Template
 
-> This is a tool developped in Python with the GUI framework PyQT6.
+> This is a tool developed in Python with the GUI framework PyQT6.
 
 ---
 
