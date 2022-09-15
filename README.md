@@ -52,13 +52,6 @@ First of all this project is tested on Python 3.8 and PyQt6 6.3.1. You should in
 Then you may have to install some of those dependencies:
 - pip install PyQt6
 
-#### API Reference
-
-```html
-    <p>dummy code</p>
-```
-[Back To The Top](#read-me-template)
-
 ---
 
 ## References
@@ -70,7 +63,7 @@ Then you may have to install some of those dependencies:
 
 GNU General Public License version 3
 
-Copyright (c) [2017] [Tim Way]
+Copyright (c) [2022] [Tim Way]
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
