@@ -20,20 +20,26 @@ Desktop app to resize, convert or/and compress images inside a defined folder.
 
 1. Browse button : you can select a folder that contains all images you want to optimize.
 2. Optional : you can fine tune options.
-**Resize width (from 0px to 1920)** :
+
+####Resize width (from 0px to 1920):
+
 - You can put any number between 0 to 1920.
 - If its value is smaller than the width of the original image, the latter will be resized by applying this new value.
 Ex: if your image has a width of 1600px, if the resize width's value is 1200px, it will be resized to 1200px because 1200px is lower than 1600px. 
 If we have chosen a value of 1800px, there would be no resize operation because 1800px is bigger than the original size of 1600px.
 - If its value is 0 then no resizing will be applied.
-**Quality (slider)** :
+
+####Quality (slider):
+
 - Quality of the output image varies from 0 to 100 (100 being the best possible quality).
-**Ext (dropdown selection)** :
+
+####Ext (dropdown selection):
 - If its value is different from "default", then the output image will be converted to the selected format.
-**Replace original (checkbox)**
+
+####Replace original (checkbox):
 - By default, the application does not replace the original image. If you want to overwrite the original image then you should check "replace original".
 
-#### Technologies
+## Technologies
 
 - Python 3.8 32bit
 - PyQT6
@@ -46,16 +52,11 @@ If we have chosen a value of 1800px, there would be no resize operation because 
 - Get the source code by cloning the repository or download it as zip.
 launch "app.py" file by lanching in your terminal: python app.py.
 
-#### Installation
+## Installation
 First of all this project is tested on Python 3.8 and PyQt6 6.3.1. You should install a virtual environnement for well organization.
 
 Then you may have to install some of those dependencies:
 - pip install PyQt6
-
----
-
-## References
-[Back To The Top](#read-me-template)
 
 ---
 
