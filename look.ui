@@ -112,6 +112,13 @@ QPushButton#btnOptimize:hover {
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="chkReplaceSource">
+          <property name="text">
+           <string>Replace original</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QProgressBar" name="progressBar">
           <property name="value">
            <number>0</number>

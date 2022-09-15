@@ -28,6 +28,7 @@ class App(QMainWindow):
 		super(App, self).__init__(parent)
 		uic.loadUi(resourcePath('look.ui'), self)
 		self.title = title
+		self.basepath = resourcePath('')
 		# The following config method helps us to set all default behaviours
 		self.config()
 
@@ -40,14 +41,21 @@ class App(QMainWindow):
 		self.sliderNotif()
 		self.spinBoxBasewidth.setValue(0)
 		# Widget config
+		# -- COMBOBOX -- #
+		# -------------- #
 		formats = ['default', 'WebP', 'png', 'jpeg', 'gif', 'ico', 'tiff' 'bmp']
 		self.comboBoxFormat.addItems(formats)
 		self.signalProgression['int'].connect(self.progressBar.setValue)
+		# -- CHECkBOX -- #
+		# Don't replace original file by default
+		self.chkReplaceSource.setChecked(False)
+		# ------------- #
 		# Connect widget to actions
 		self.btnBrowseImageFolder.clicked.connect(self.chooseFolder)
 		self.btnOptimize.clicked.connect(lambda: self.optimize())
 		self.hSliderQuality.valueChanged.connect(lambda: self.sliderNotif())
 		self.btnBrowseFolder.clicked.connect(lambda: open_folder(self.formImageFolder.text()))
+		self.chkReplaceSource.stateChanged.connect(self.setOverwriteMode)
 
 	def center_mainwindow(self, w=600, h=300):
 		self.resize(w,h)
@@ -80,13 +88,22 @@ class App(QMainWindow):
 			return
 		print(images_path)
 		config = {'quality': self.hSliderQuality.value(),
-			'base_width': self.spinBoxBasewidth.value()
+			'base_width': self.spinBoxBasewidth.value(),
+			'format': self.comboBoxFormat.currentText(),
+			'overwrite': self.chkReplaceSource.isChecked()
 		}
-		opt = ImageOptimizer(self, images_path, config)
-		opt.compress(format=self.comboBoxFormat.currentText())
+		opt = ImageOptimizer(self, images_path, config)		
+		opt.compress(config['overwrite'])
 		# msg_box(msg_text=f'Finished', msg_title='Optimize image', 
 		# 	autoclose=True, timeout=3000
 		# )
+
+	def setOverwriteMode(self):
+		if self.chkReplaceSource.isChecked():
+			self.comboBoxFormat.setCurrentText('default')
+			self.comboBoxFormat.setEnabled(False)
+		else:			
+			self.comboBoxFormat.setEnabled(True)
 		
 def main(): 
 	app = QApplication(sys.argv)
