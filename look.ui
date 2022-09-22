@@ -116,6 +116,9 @@ QPushButton#btnOptimize:hover {
           <property name="text">
            <string>Replace original</string>
           </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item>
