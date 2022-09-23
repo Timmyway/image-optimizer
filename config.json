@@ -1,0 +1,11 @@
+{
+    "kitbuilder_url": "http://127.0.0.1:9000/",
+    "formats": ["default", "WebP", "png", "jpeg", "gif", "ico", "tiff", "bmp"],
+    "kb_username": "fr2devkontiki@gmail.com",
+    "kb_password": "kontiki123",
+    "replace_source": false,
+    "file_mode": true,
+    "resize_width": 0,
+    "compression_quality": 80,
+    "clear_after_upload": false
+}

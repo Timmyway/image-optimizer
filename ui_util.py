@@ -1,12 +1,39 @@
 from pathlib import Path
-from PyQt6.QtGui import QTextCursor, QFont
 from PyQt6.QtCore import pyqtSignal, QObject, QTimer
-from PyQt6.QtWidgets import QSizePolicy, QTreeWidgetItem, QMessageBox, QFileDialog
+from PyQt6.QtWidgets import QMessageBox
 import threading
 import webbrowser
-import os
-import time
-from datetime import datetime, timedelta
+import os, json
+
+class JsonConfig:
+	@staticmethod
+	def read(path):		
+		try:
+			with open(path + '.json', encoding='utf-8') as json_data:
+				config = json.load(json_data)
+				return config
+		except FileNotFoundError:
+			print(f'No such file or directory: {path}')
+			return {}
+
+class ImageHelper:
+	@staticmethod
+	def parseImages(folder, allowed_extensions=['WebP', 'png', 'jpeg', 'jpg', 'gif', 'ico', 'tiff' 'bmp'], relative=True):
+		# keep only allowed images		
+		images = []
+		extensions = [ext.lower() for ext in allowed_extensions]
+		for item in os.listdir(folder):			
+			item_abs_path = os.path.join(folder, item)			
+			if os.path.isfile(item_abs_path):
+				print('=============> Folder: ', item_abs_path)		
+				_, ext = os.path.splitext(os.path.basename(item))				
+				if ('.' in ext) and (ext.lstrip('.').lower() in extensions):
+					if relative:
+						images.append(item)
+					else:
+						images.append(item_abs_path)
+		print('Parse images: ', images)
+		return images
 
 def is_visible(visible, widget):
 	''' Set widget visibility according to a variable state '''

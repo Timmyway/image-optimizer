@@ -30,9 +30,8 @@ class ImageOptimizer(object):
 		for item in os.listdir(folder):			
 			item_abs_path = os.path.join(folder, item)
 			if os.path.isfile(item_abs_path):				
-				_, ext = os.path.splitext(os.path.basename(item))
-				print(f'Ext: {ext} | Extensions: {extensions}')
-				if ('.' in ext) and (ext.lstrip('.') in extensions):
+				_, ext = os.path.splitext(os.path.basename(item))				
+				if ('.' in ext) and (ext.lstrip('.').lower() in extensions):
 					images.append(item)
 		print('Parse images: ', images)
 		return images
@@ -64,8 +63,11 @@ class ImageOptimizer(object):
 		hsize = int((float(pillow_image.size[1]) * float(wpercent)))
 		return pillow_image.resize((self.base_width, hsize), Image.ANTIALIAS)
 		
-	def compress(self, overwrite=False):
-		self.images = ImageOptimizer.parseImages(self.parent.basepath, self.path)
+	def compress(self, overwrite=False, images=None, filemode=False):
+		if images:
+			self.images = images
+		else:
+			self.images = ImageOptimizer.parseImages(self.parent.basepath, self.path)
 		for i,image_path in enumerate(self.images):
 			im = Image.open(self.setAbsPath(image_path))
 			# Resize image if it is too much big and base width is above 0
@@ -81,7 +83,11 @@ class ImageOptimizer(object):
 				prefix=self.config.get('prefix', '-export'), 
 				extension=format
 			)
-			dest_path = self.setAbsPath(filename)
+			# File mode
+			if filemode:
+				dest_path = os.path.join(os.path.dirname(image_path), filename)
+			else:
+				dest_path = self.setAbsPath(filename)
 			# print('Save to ', dest_path)			
 			print(dest_path, filename)
 			if format:
@@ -94,7 +100,7 @@ class ImageOptimizer(object):
 					format=format
 				)
 			progress_value = ((i+1) * 100) // len(self.images)
-			self.parent.signalProgression.emit(progress_value)
+			self.parent.signalProgression.emit(progress_value)	
 
 # opt = ImageOptimizer(r'C:\Users\Usera\Pictures\bank\pixabay')
 # opt.compress()
