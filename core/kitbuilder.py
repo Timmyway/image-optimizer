@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 class Kitbuilder(object):
 	"""docstring for Kitbuilder"""
-	url = 'http://127.0.0.1:9000/'
+	url = 'https://127.0.0.1:9000/kitbuilder/'
 	def __init__(self, user_creds):
 		super(Kitbuilder, self).__init__()
 		self.url = ''
@@ -21,8 +21,7 @@ class Kitbuilder(object):
 
 	def getToken(self, url, token={}):
 		page = self.session.get(url)
-		soup = BeautifulSoup(page.text, 'html.parser')
-		print('==========> soup', soup)
+		soup = BeautifulSoup(page.text, 'html.parser')		
 		tag = token.get('tag', 'meta')
 		search = token.get('search', {"name": "csrf-token"})
 		attr = token.get('value', 'content')
@@ -48,9 +47,7 @@ class Kitbuilder(object):
 		self.cookies = {
 			'csrftoken': csrf_token,
 			'XSRF-TOKEN': xsrf_token
-		}
-		print(payload)
-		print('Headers: ', self.headers)
+		}		
 		r = self.session.post(login_url, data=payload, headers=self.headers)		
 
 	def getImages(self, page=1, user='all'):		
@@ -58,7 +55,7 @@ class Kitbuilder(object):
 		print('Reach endpoint: ', gallery_url)
 		print('Open this url: ', gallery_url)		
 		r = self.session.get(gallery_url, headers=self.headers)		
-		images = r.json()
+		images = r.json()		
 		return images
 
 
@@ -70,8 +67,9 @@ class Kitbuilder(object):
 			'name': os.path.basename(image_url)
 		}
 		self.headers['X-CSRF-TOKEN'] = self.getToken(gallery_url)
-		r = self.session.post(gallery_url, headers=self.headers, files=files, params=payload)		
-		image = r.json()		
+		r = self.session.post(gallery_url, headers=self.headers, files=files, params=payload)
+		image = r.json()
+		print('====> ', image)
 		try:
 			return image['url']
 		except KeyError:
@@ -91,5 +89,5 @@ class Kitbuilder(object):
 
 	@staticmethod
 	def save(content):
-		with open('report.html', 'w', encoding='utf-8') as f:
+		with open('report.html', 'a', encoding='utf-8') as f:
 			f.write(content)

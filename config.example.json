@@ -1,10 +1,9 @@
 {
     "kitbuilder_url": "http://127.0.0.1:9000/",
     "formats": ["default", "WebP", "png", "jpg", "gif", "ico", "tiff", "bmp"],
-    "kb_use": false,
-    "key": "kOntik1",
-    "kb_username": "fr2devkontiki@gmail.com",
-    "kb_password": "ee7a47d493017ab19d95a6a3adb6c226",
+    "kb_use": true,
+    "kb_username": "example",
+    "kb_password": "@ex#ample!",
     "replace_source": false,
     "file_mode": true,
     "resize_width": 0,

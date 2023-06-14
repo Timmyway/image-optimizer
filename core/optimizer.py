@@ -32,13 +32,11 @@ class ImageOptimizer(object):
 			if os.path.isfile(item_abs_path):				
 				_, ext = os.path.splitext(os.path.basename(item))				
 				if ('.' in ext) and (ext.lstrip('.').lower() in extensions):
-					images.append(item)
-		print('Parse images: ', images)
+					images.append(item)		
 		return images
 
 	@staticmethod
-	def setName(image_path, overwrite, timestamp=True, prefix='-export', extension='default'):		
-		print('Set name input -----------------------------: ', image_path)
+	def setName(image_path, overwrite, timestamp=True, prefix='-export', extension='default'):				
 		if overwrite:
 			return os.path.basename(image_path)
 		basename, ext = os.path.splitext(os.path.basename(image_path))
@@ -49,8 +47,7 @@ class ImageOptimizer(object):
 		filename = f'{basename}{prefix}{ext}'
 		# Timestamp added on option
 		if timestamp:            	
-			filename = f'{basename}{prefix}-{time()}{ext}'
-		print('Set name output: ', filename)
+			filename = f'{basename}{prefix}-{time()}{ext}'		
 		return filename
 
 	def setAbsPath(self, filename):
@@ -72,7 +69,7 @@ class ImageOptimizer(object):
 			im = Image.open(self.setAbsPath(image_path))
 			# Resize image if it is too much big and base width is above 0
 			w, h = im.size
-			if self.base_width:
+			if self.base_width:				
 				if w > self.base_width:
 					im = self.resize(im)
 			# Set export name (options: add timestamp, suffix ...)
@@ -90,6 +87,11 @@ class ImageOptimizer(object):
 				dest_path = self.setAbsPath(filename)
 			# print('Save to ', dest_path)			
 			print(dest_path, filename)
+			print('Format: ', format)
+			# Since JPEG does not support the RGBA color mode, 
+			# the image needs to be converted to a compatible color mode before saving it as a JPEG.
+			if (format == 'jpg'):
+				im = im.convert('RGB')
 			if format:
 				im.save(dest_path, quality=self.config.get('quality', 80), 
 					optimize=True				

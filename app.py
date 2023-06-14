@@ -7,6 +7,7 @@ import sys, os
 
 from core.optimizer import ImageOptimizer
 from core.kitbuilder import Kitbuilder
+from crypt import Crypt
 from ui_util import msg_box, open_folder, ImageHelper, JsonConfig
 
 basedir = os.path.dirname(__file__)
@@ -17,10 +18,12 @@ def resourcePath(relativePath):
 		# PyInstaller creates a temp folder and stores path in _MEIPASS
 		basePath = sys._MEIPASS
 	except Exception:
-		basePath = os.path.abspath(".")
-
-	print('=====>', os.path.join(basePath, relativePath))	
+		basePath = os.path.abspath(".")	
 	return os.path.join(basePath, relativePath)
+
+def workingDirPath(filename):
+	return os.path.join(os.getcwd(), filename)
+
 
 class App(QMainWindow):
 	signalProgression = pyqtSignal(int, name='update')
@@ -29,6 +32,7 @@ class App(QMainWindow):
 		super(App, self).__init__(parent)
 		uic.loadUi(resourcePath('look.ui'), self)
 		self.title = title
+		print(resourcePath('look.ui'))
 		self.basepath = resourcePath('')
 		self.last_folder = '/home'
 		# The following config method helps us to set all default behaviours
@@ -36,8 +40,7 @@ class App(QMainWindow):
 
 	def config(self):
 		# Configuration datas:
-		self.user_config = JsonConfig.read(resourcePath('config'))
-		print(self.user_config)
+		self.user_config = JsonConfig.read('config')		
 		# Set application title -----------------------------------------------
 		self.setWindowTitle(self.title)
 		# ---- Size and position of Mainwindow --------------------------------
@@ -45,17 +48,25 @@ class App(QMainWindow):
 		# Default values:
 		self.sliderNotif()
 		self.spinBoxBasewidth.setValue(self.user_config.get('resize_width', 0))
-		# Kitbuilder
+		# Kitbuilder : can be deactivated on config file
 		Kitbuilder.url = self.user_config.get('kitbuilder_url', 'http://127.0.0.1:9000/')
-		try:
-			creds = {'username': self.user_config['kb_username'], 
-				'password': self.user_config['kb_password']
-			}
-			self.kitbuilder = Kitbuilder(creds)
-			if self.kitbuilder.status == 'off':
+		if self.user_config.get('kb_use', False):
+			try:
+				try:
+					cryptor = Crypt(key=self.user_config['key'])
+					pwd = cryptor.teamtoolDecrypt(self.user_config['kb_password'])
+					creds = {'username': self.user_config['kb_username'], 
+						'password': pwd
+					}
+					self.kitbuilder = Kitbuilder(creds)
+					if self.kitbuilder.status == 'off':
+						self.btnKbUpload.setVisible(False)
+				except ValueError:
+					self.btnKbUpload.setVisible(False)
+			except KeyError:
 				self.btnKbUpload.setVisible(False)
-		except KeyError:
-			self.btnKbUpload.setVisible(False)		
+		else:
+			self.btnKbUpload.setVisible(False)
 		# Widget config
 		# -- COMBOBOX -- #
 		# -------------- #
@@ -116,7 +127,7 @@ class App(QMainWindow):
 		dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 		images = dialog.getOpenFileNames(self, 
 			"Select files", self.last_folder,
-			"images (*.webp .png *.jpeg *.jpg *.gif *.ico *.bmp)"
+			"images (*.webp *.png *.jpeg *.jpg *.gif *.ico *.bmp)"
 		)
 		try:
 			self.last_folder = os.path.dirname(images[0][0])
@@ -130,8 +141,9 @@ class App(QMainWindow):
 		for image_item in selected_images:
 			self.listWidgetImages.takeItem(self.listWidgetImages.row(image_item))
 
-	def kbUploadImages(self):		
+	def kbUploadImages(self):
 		# File mode
+		self.signalProgression.emit(0)
 		images = []	
 		if self.chkFileMode.isChecked():
 			if self.listWidgetImages.count() > 0:
@@ -154,19 +166,22 @@ class App(QMainWindow):
 			else:
 				images = ImageHelper.parseImages(images_path, relative=False)
 		for i,image in enumerate(images):
-			image_url = self.kitbuilder.storeImage(image)
-			content = f'''<a href="{image_url}" target="_blank">
-	<span>{image_url}</span>
-</a><br />
-			'''
-			self.save('last_uploaded.html', content=content)
-			progress_value = ((i+1) * 100) // len(images)
-			self.signalProgression.emit(progress_value)
+			try:
+				image_url = self.kitbuilder.storeImage(image)
+				content = f'''<a href="{image_url}" target="_blank">
+		<span>{image_url}</span>
+	</a><br />
+				'''
+				self.save('last_uploaded.html', content=content)
+				progress_value = ((i+1) * 100) // len(images)
+				self.signalProgression.emit(progress_value)
+			except:
+				print('Could not upload this file to KB')
 		if self.chkFileMode.isChecked() and self.user_config.get('clear_after_upload', False):
 			self.listWidgetImages.clear()		
 
-	def save(self, filename='saveed.txt', mode='a', content=''):
-		with open(resourcePath(filename), mode) as f:
+	def save(self, filename, mode='a', content=''):		
+		with open(workingDirPath(filename), mode, encoding='utf-8') as f:
 			f.write(content)
 
 	
@@ -177,17 +192,16 @@ class App(QMainWindow):
 		config = {'quality': self.hSliderQuality.value(),
 			'base_width': self.spinBoxBasewidth.value(),
 			'format': self.comboBoxFormat.currentText(),
-			'overwrite': self.chkReplaceSource.isChecked()			
+			'overwrite': self.chkReplaceSource.isChecked()
 		}
 		opt = ImageOptimizer(self, images_path, config)
-		if self.chkFileMode.isChecked():
-			print('List item count: ', type(self.listWidgetImages.count()))
+		self.signalProgression.emit(0)
+		if self.chkFileMode.isChecked():			
 			if self.listWidgetImages.count() > 0:
 				images = []
 				for index in range(self.listWidgetImages.count()):
 					images.append(self.listWidgetImages.item(index))
 				images = [image.text() for image in images]
-				print('------------>', images)				
 				opt.compress(config['overwrite'], images, True)
 			else:
 				msg_box(msg_text=f'File mode: "no images found"', msg_title='Optimize image', 

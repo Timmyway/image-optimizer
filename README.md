@@ -57,6 +57,10 @@ First of all this project is tested on Python 3.8 and PyQt6 6.3.1. You should in
 Then you may have to install some of those dependencies:
 - pip install PyQt6
 
+## Build
+Run the following command :
+```pyinstaller app.spec```
+
 ---
 
 ## License

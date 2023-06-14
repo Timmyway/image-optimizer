@@ -24,15 +24,13 @@ class ImageHelper:
 		extensions = [ext.lower() for ext in allowed_extensions]
 		for item in os.listdir(folder):			
 			item_abs_path = os.path.join(folder, item)			
-			if os.path.isfile(item_abs_path):
-				print('=============> Folder: ', item_abs_path)		
+			if os.path.isfile(item_abs_path):				
 				_, ext = os.path.splitext(os.path.basename(item))				
 				if ('.' in ext) and (ext.lstrip('.').lower() in extensions):
 					if relative:
 						images.append(item)
 					else:
-						images.append(item_abs_path)
-		print('Parse images: ', images)
+						images.append(item_abs_path)		
 		return images
 
 def is_visible(visible, widget):
