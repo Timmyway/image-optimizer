@@ -6,8 +6,6 @@ from PyQt6 import uic
 import sys, os
 
 from core.optimizer import ImageOptimizer
-from core.kitbuilder import Kitbuilder
-from crypt import Crypt
 from ui_util import msg_box, open_folder, ImageHelper, JsonConfig
 
 basedir = os.path.dirname(__file__)
@@ -47,26 +45,7 @@ class App(QMainWindow):
 		self.center_mainwindow(w=600, h=100)
 		# Default values:
 		self.sliderNotif()
-		self.spinBoxBasewidth.setValue(self.user_config.get('resize_width', 0))
-		# Kitbuilder : can be deactivated on config file
-		Kitbuilder.url = self.user_config.get('kitbuilder_url', 'http://127.0.0.1:9000/')
-		if self.user_config.get('kb_use', False):
-			try:
-				try:
-					cryptor = Crypt(key=self.user_config['key'])
-					pwd = cryptor.teamtoolDecrypt(self.user_config['kb_password'])
-					creds = {'username': self.user_config['kb_username'], 
-						'password': pwd
-					}
-					self.kitbuilder = Kitbuilder(creds)
-					if self.kitbuilder.status == 'off':
-						self.btnKbUpload.setVisible(False)
-				except ValueError:
-					self.btnKbUpload.setVisible(False)
-			except KeyError:
-				self.btnKbUpload.setVisible(False)
-		else:
-			self.btnKbUpload.setVisible(False)
+		self.spinBoxBasewidth.setValue(self.user_config.get('resize_width', 0))				
 		# Widget config
 		# -- COMBOBOX -- #
 		# -------------- #
@@ -80,7 +59,8 @@ class App(QMainWindow):
 		self.chkReplaceSource.setChecked(self.user_config.get('replace_source', False))		
 		self.chkFileMode.setChecked(self.user_config.get('file_mode', False))
 		self.listWidgetImages.setVisible(self.chkFileMode.isChecked())
-		# ------------- #
+		self.formImageFolder.setVisible(False)
+		# ------------- #		
 		# Connect widget to actions
 		self.btnBrowseImageFolder.clicked.connect(self.browse)
 		self.btnOptimize.clicked.connect(lambda: self.optimize())
@@ -88,7 +68,7 @@ class App(QMainWindow):
 		self.btnBrowseFolder.clicked.connect(lambda: open_folder(self.formImageFolder.text()))
 		self.chkReplaceSource.stateChanged.connect(self.setOverwriteMode)
 		self.chkFileMode.stateChanged.connect(self.setBrowseMode)		
-		self.btnKbUpload.clicked.connect(lambda: self.kbUploadImages())
+		self.btnMakeGif.clicked.connect(lambda: self.optimize('build_gif'))
 		# Set shortcut
 		self.shortcut_delete_from_list = QShortcut(QKeySequence('Del'), self.listWidgetImages)
 		self.shortcut_delete_from_list.activated.connect(lambda: self.removeImages())
@@ -164,58 +144,85 @@ class App(QMainWindow):
 					msg_type=QMessageBox.Icon.Warning
 				)
 			else:
-				images = ImageHelper.parseImages(images_path, relative=False)
-		for i,image in enumerate(images):
-			try:
-				image_url = self.kitbuilder.storeImage(image)
-				content = f'''<a href="{image_url}" target="_blank">
-		<span>{image_url}</span>
-	</a><br />
-				'''
-				self.save('last_uploaded.html', content=content)
-				progress_value = ((i+1) * 100) // len(images)
-				self.signalProgression.emit(progress_value)
-			except:
-				print('Could not upload this file to KB')
+				images = ImageHelper.parseImages(images_path, relative=False)		
 		if self.chkFileMode.isChecked() and self.user_config.get('clear_after_upload', False):
-			self.listWidgetImages.clear()		
+			self.listWidgetImages.clear()
 
-	def save(self, filename, mode='a', content=''):		
+	def save(self, filename, mode='a', content=''):
 		with open(workingDirPath(filename), mode, encoding='utf-8') as f:
 			f.write(content)
 
 	
-	def optimize(self):
+	def optimize(self, optimization_type: str = 'compress'):
 		''' Compress and resize images inside user defined folder '''
+		# Get the path of the images folder from the form
 		images_path = self.formImageFolder.text()
 
+		# Configuration dictionary for the optimizer	
 		config = {'quality': self.hSliderQuality.value(),
 			'base_width': self.spinBoxBasewidth.value(),
 			'format': self.comboBoxFormat.currentText(),
 			'overwrite': self.chkReplaceSource.isChecked()
 		}
+
+		# Initialize the image optimizer with the specified configuration
 		opt = ImageOptimizer(self, images_path, config)
+
+		# Emit a signal to set the progression bar to 0
 		self.signalProgression.emit(0)
-		if self.chkFileMode.isChecked():			
+
+		# Check if file mode is selected
+		if self.chkFileMode.isChecked():
+			# If the widget list has images
 			if self.listWidgetImages.count() > 0:
 				images = []
+				# Iterate over the items in the list widget to gather image file names
 				for index in range(self.listWidgetImages.count()):
 					images.append(self.listWidgetImages.item(index))
+				# Extract text from list widget items to get file paths
 				images = [image.text() for image in images]
-				opt.compress(config['overwrite'], images, True)
+
+				if optimization_type == 'compress':
+					# Compress the images with overwrite option
+					opt.compress(config['overwrite'], images, filemode=True)
+				elif optimization_type == 'build_gif':
+					# Build the GIF from the images
+					opt.buildGif(
+				  		images,
+						filemode=True,
+						duration=self.spinBoxMakeGifDuration.value(),
+						loop=self.spinBoxMakeGifRepeat.value()
+					)
+				else:
+					# Show an error message if the optimization type is not recognized
+					msg_box(msg_text=f'Unknown optimization type: {optimization_type}', msg_title='Optimize image', 
+							autoclose=True, timeout=2000, msg_type=QMessageBox.Icon.Warning)
 			else:
+				# Show a warning message box if no images are found in file mode
 				msg_box(msg_text=f'File mode: "no images found"', msg_title='Optimize image', 
 					autoclose=True, timeout=2000,
 					msg_type=QMessageBox.Icon.Warning
 				)
 		else:
+			# Folder mode is selected
 			if not images_path:
+				# Show a warning message box if no images path is provided in folder mode
 				msg_box(msg_text=f'Folder mode: "no images found"', msg_title='Optimize image', 
 					autoclose=True, timeout=2000,
 					msg_type=QMessageBox.Icon.Warning
 				)
 			else:
-				opt.compress(config['overwrite'])
+				if optimization_type == 'compress':
+					# Compress images in the specified folder with overwrite option
+					opt.compress(config['overwrite'])
+				elif optimization_type == 'build_gif':
+					# Show an error message as building GIF from a folder is not supported
+					msg_box(msg_text='Building GIF from a folder is not supported. Please select files in file mode.', 
+							msg_title='Optimize image', autoclose=True, timeout=2000, msg_type=QMessageBox.Icon.Warning)
+				else:
+					# Show an error message if the optimization type is not recognized
+					msg_box(msg_text=f'Unknown optimization type: {optimization_type}', msg_title='Optimize image', 
+							autoclose=True, timeout=2000, msg_type=QMessageBox.Icon.Warning)
 
 	def setOverwriteMode(self):
 		if self.chkReplaceSource.isChecked():

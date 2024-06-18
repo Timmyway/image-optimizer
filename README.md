@@ -54,8 +54,8 @@ launch "app.py" file by lanching in your terminal: python app.py.
 ## Installation
 First of all this project is tested on Python 3.8 and PyQt6 6.3.1. You should install a virtual environnement for well organization.
 
-Then you may have to install some of those dependencies:
-- pip install PyQt6
+Then you may have to install those dependencies:
+- pip install PyQt6 pillow requests
 
 ## Build
 Run the following command :
