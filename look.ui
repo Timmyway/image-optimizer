@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>601</width>
-    <height>404</height>
+    <width>606</width>
+    <height>452</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,7 @@
   <property name="styleSheet">
    <string notr="true">QMainWindow {
 	background: #f5f5f5;
+	font-family: 'Montserrat';
 }
 
 QPushButton {
@@ -67,15 +68,19 @@ QTextEdit#txtOutput {
 	background: #455a64; color: #fafafa;
 }
 
-QPushButton#btnOptimize {
+QPushButton#btnOptimize, QPushButton#btnMakeGif {
 	border-color: #66AC00;
 }
-QPushButton#btnOptimize:hover {
+QPushButton#btnOptimize:hover, QPushButton#btnMakeGif:hover {
 	background-color: #AFFC41;
 }
 QPushButton#btnListImagesRemove:hover {
 	background-color: #FC4169;
 	border-color: #FC4169;
+}
+
+QLabel#labelGeneralOptions, QLabel#labelGifOptions {
+	font-weight: bold;
 }</string>
   </property>
   <property name="iconSize">
@@ -103,7 +108,7 @@ QPushButton#btnListImagesRemove:hover {
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item row="2" column="0">
+      <item row="3" column="0" alignment="Qt::AlignLeft">
        <widget class="QFrame" name="hFrameOption3">
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <property name="topMargin">
@@ -122,6 +127,26 @@ QPushButton#btnListImagesRemove:hover {
            </property>
            <property name="text">
             <string>Optimize</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnMakeGif">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Make GIF</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnBrowseFolder">
+           <property name="text">
+            <string>Image Folder</string>
            </property>
           </widget>
          </item>
@@ -170,33 +195,6 @@ QPushButton#btnListImagesRemove:hover {
           <number>5</number>
          </property>
          <item>
-          <widget class="QPushButton" name="btnBrowseFolder">
-           <property name="text">
-            <string>Open images folder</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="chkReplaceSource">
-           <property name="text">
-            <string>Replace original</string>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="chkFileMode">
-           <property name="text">
-            <string>File mode</string>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QProgressBar" name="progressBar">
            <property name="value">
             <number>0</number>
@@ -218,7 +216,7 @@ QPushButton#btnListImagesRemove:hover {
         </layout>
        </widget>
       </item>
-      <item row="5" column="0" alignment="Qt::AlignLeft">
+      <item row="6" column="0" alignment="Qt::AlignLeft">
        <widget class="QFrame" name="hFrameAction">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -258,50 +256,28 @@ QPushButton#btnListImagesRemove:hover {
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
-          <layout class="QHBoxLayout" name="hLayoutOptions">
-           <item>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <property name="leftMargin">
+            <number>5</number>
+           </property>
+           <property name="rightMargin">
+            <number>5</number>
+           </property>
+           <item row="2" column="0">
             <widget class="QLabel" name="labelWidth">
              <property name="text">
               <string>Resize width</string>
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QSpinBox" name="spinBoxBasewidth">
-             <property name="suffix">
-              <string> px</string>
-             </property>
-             <property name="prefix">
-              <string/>
-             </property>
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>1980</number>
-             </property>
-             <property name="singleStep">
-              <number>128</number>
-             </property>
-             <property name="stepType">
-              <enum>QAbstractSpinBox::DefaultStepType</enum>
-             </property>
-             <property name="value">
-              <number>1280</number>
-             </property>
-             <property name="displayIntegerBase">
-              <number>10</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label">
+           <item row="2" column="4">
+            <widget class="QLabel" name="labelSliderQuality">
              <property name="text">
-              <string>Ext</string>
+              <string>Quality</string>
              </property>
             </widget>
            </item>
-           <item>
+           <item row="2" column="3">
             <widget class="QComboBox" name="comboBoxFormat">
              <property name="insertPolicy">
               <enum>QComboBox::NoInsert</enum>
@@ -311,14 +287,34 @@ QPushButton#btnListImagesRemove:hover {
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QLabel" name="labelSliderQuality">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelGeneralOptions">
              <property name="text">
-              <string>Quality</string>
+              <string>General options</string>
              </property>
             </widget>
            </item>
-           <item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="chkReplaceSource">
+             <property name="text">
+              <string>Replace original</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="chkFileMode">
+             <property name="text">
+              <string>File mode</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="5">
             <widget class="QSlider" name="hSliderQuality">
              <property name="maximum">
               <number>100</number>
@@ -352,7 +348,42 @@ QPushButton#btnListImagesRemove:hover {
              </property>
             </widget>
            </item>
-           <item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="spinBoxBasewidth">
+             <property name="suffix">
+              <string> px</string>
+             </property>
+             <property name="prefix">
+              <string/>
+             </property>
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>1980</number>
+             </property>
+             <property name="singleStep">
+              <number>128</number>
+             </property>
+             <property name="stepType">
+              <enum>QAbstractSpinBox::DefaultStepType</enum>
+             </property>
+             <property name="value">
+              <number>1280</number>
+             </property>
+             <property name="displayIntegerBase">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Ext</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="6">
             <widget class="QLabel" name="labelSliderQualityValue">
              <property name="text">
               <string>80</string>
@@ -364,7 +395,7 @@ QPushButton#btnListImagesRemove:hover {
         </item>
        </layout>
       </item>
-      <item row="6" column="0">
+      <item row="7" column="0">
        <widget class="QListWidget" name="listWidgetImages">
         <property name="sizeAdjustPolicy">
          <enum>QAbstractScrollArea::AdjustIgnored</enum>
@@ -392,14 +423,29 @@ QPushButton#btnListImagesRemove:hover {
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="2" column="0">
        <widget class="QFrame" name="horizontalFrame">
+        <property name="frameShape">
+         <enum>QFrame::Panel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <property name="midLineWidth">
+         <number>0</number>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <property name="leftMargin">
+          <number>5</number>
+         </property>
          <property name="topMargin">
           <number>5</number>
          </property>
          <property name="rightMargin">
-          <number>1</number>
+          <number>5</number>
          </property>
          <property name="bottomMargin">
           <number>5</number>
@@ -455,19 +501,6 @@ QPushButton#btnListImagesRemove:hover {
               </item>
              </layout>
             </item>
-            <item row="2" column="6">
-             <widget class="QPushButton" name="btnMakeGif">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Make GIF</string>
-              </property>
-             </widget>
-            </item>
             <item row="2" column="3">
              <layout class="QVBoxLayout" name="verticalLayout_2">
               <property name="leftMargin">
@@ -504,6 +537,16 @@ QPushButton#btnListImagesRemove:hover {
               </item>
              </layout>
             </item>
+            <item row="0" column="2" colspan="5">
+             <widget class="QLabel" name="labelGifOptions">
+              <property name="text">
+               <string>GIF Maker options</string>
+              </property>
+              <property name="textFormat">
+               <enum>Qt::AutoText</enum>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -519,7 +562,7 @@ QPushButton#btnListImagesRemove:hover {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>601</width>
+     <width>606</width>
      <height>21</height>
     </rect>
    </property>

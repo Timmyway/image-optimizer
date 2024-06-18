@@ -241,18 +241,15 @@ class ImageOptimizer(object):
 			progress_value = ((i+1) * 100) // len(self.images)
 			self.parent.signalProgression.emit(progress_value)
 
-	def buildGif(self,			
-			images: List[str] = [],
-			filemode: bool = False,
-			duration: int = 30,
-			loop: int = 0
-		) -> None:
+	def buildGif(self, images: List[str] = [], filemode: bool = False, duration: int = 30, loop: int = 0) -> None:
 		"""
 		Build a GIF image from multiple images.
 
 		Args:
 			images (List[str]): List of image file paths to be included in the GIF.
-			output_path (str): The path where the built GIF image will be saved.
+			filemode (bool): If True, the built GIF image will be saved in the same directory as the first image in the list.
+			duration (int): The duration (in milliseconds) for each frame of the GIF.
+			loop (int): The number of times the GIF should loop. 0 means loop indefinitely.
 		"""
 		# Set the list of images to be processed
 		if images:
@@ -261,27 +258,34 @@ class ImageOptimizer(object):
 			self.images = ImageOptimizer.parseImages(self.parent.basepath, self.path)
 
 		frames = []
-		for i,image_path in enumerate(self.images):
+		first_image = Image.open(self.setAbsPath(self.images[0]))
+		base_width, base_height = first_image.size
+		for i, image_path in enumerate(self.images):
 			# Open the image
 			im = Image.open(self.setAbsPath(image_path))
-			# Resize the image
-			resized_frame = self.resize(im)
+			# Calculate the scaling factor for maintaining the aspect ratio
+			wpercent = (base_width / float(im.size[0]))
+			hsize = int((float(im.size[1]) * float(wpercent)))
+			# Resize the image while maintaining the aspect ratio
+			resized_frame = im.resize((base_width, hsize), Image.LANCZOS)
+			# Create a black background if the image is smaller than the base size
+			background = Image.new("RGB", (base_width, base_height), "black")
+			background.paste(resized_frame, (0, (base_height - hsize) // 2))
 			# Append the resized frame to the frames list
-			frames.append(resized_frame)
+			frames.append(background)
 
 			# Emit the progress signal (Keep 25% to saving process)
-			progress_value = ((i+1) * 100) // len(self.images) - 25
+			progress_value = ((i + 1) * 100) // len(self.images) - 25
 			self.parent.signalProgression.emit(progress_value)
 
-		width_prefix = str(self.base_width) if self.base_width else ''
-		filename = self.generateRandomName(f'GIF_{width_prefix}', extension='gif')
-			
+		filename = self.generateRandomName('GIF_', 'gif')
+
 		# File mode: determine the destination path for the image
-		if filemode:				
+		if filemode:
 			dest_path = os.path.join(os.path.dirname(self.images[0]), filename)
 		else:
 			dest_path = self.setAbsPath(filename)
-					
+
 		# Save the frames as a GIF
 		if frames:
 			frames[0].save(
