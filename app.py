@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QGridLayout, QFileDialog, QMessageBox
-from PyQt6.QtGui import QGuiApplication, QIcon, QShortcut, QKeySequence
-from PyQt6.QtCore import QPoint, QDir, pyqtSignal
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QColorDialog
+from PyQt6.QtGui import QGuiApplication, QIcon, QShortcut, QKeySequence, QDesktopServices
+from PyQt6.QtCore import QPoint, QDir, pyqtSignal, QUrl
 from PyQt6 import uic
 # Built-in module :
 import sys, os
@@ -37,43 +37,54 @@ class App(QMainWindow):
 		self.config()
 
 	def config(self):
-		# Configuration datas:
-		self.user_config = JsonConfig.read('config')		
-		# Set application title -----------------------------------------------
-		self.setWindowTitle(self.title)
-		# ---- Size and position of Mainwindow --------------------------------
-		self.center_mainwindow(w=600, h=100)
-		# Default values:
-		self.sliderNotif()
-		self.spinBoxBasewidth.setValue(self.user_config.get('resize_width', 0))				
-		# Widget config
-		# -- COMBOBOX -- #
-		# -------------- #
-		formats = self.user_config.get('formats', 
-			['default', 'WebP', 'png', 'jpeg', 'gif', 'ico', 'tiff', 'bmp']
-		)
-		self.comboBoxFormat.addItems(formats)
+		# Load user configuration:
+		self.user_config = JsonConfig.read('config')
+
+		# Configure widgets and connections		
+		self.setWindowTitle(self.title)		
+		self.center_mainwindow(w=600, h=100)		
+		self.updateQualitySliderLabel()
+		self.setupComboBoxFormats()
+		self.setupCheckBoxes()
+		self.setupWidgetConnections()
+		
 		self.signalProgression['int'].connect(self.progressBar.setValue)
-		# -- CHECkBOX -- #
-		# Don't replace original file by default
-		self.chkReplaceSource.setChecked(self.user_config.get('replace_source', False))		
-		self.chkFileMode.setChecked(self.user_config.get('file_mode', False))
-		self.listWidgetImages.setVisible(self.chkFileMode.isChecked())
-		self.formImageFolder.setVisible(False)
-		# ------------- #		
-		# Connect widget to actions
-		self.btnBrowseImageFolder.clicked.connect(self.browse)
-		self.btnOptimize.clicked.connect(lambda: self.optimize())
-		self.hSliderQuality.valueChanged.connect(lambda: self.sliderNotif())
-		self.btnBrowseFolder.clicked.connect(lambda: open_folder(self.formImageFolder.text()))
-		self.chkReplaceSource.stateChanged.connect(self.setOverwriteMode)
-		self.chkFileMode.stateChanged.connect(self.setBrowseMode)		
-		self.btnMakeGif.clicked.connect(lambda: self.optimize('build_gif'))
+
 		# Set shortcut
 		self.shortcut_delete_from_list = QShortcut(QKeySequence('Del'), self.listWidgetImages)
 		self.shortcut_delete_from_list.activated.connect(lambda: self.removeImages())
+
 		# Set default values:
+		self.spinBoxBasewidth.setValue(self.user_config.get('resize_width', 0))
 		self.hSliderQuality.setValue(self.user_config.get('compression_quality', 80))
+
+	def setupWidgetConnections(self):
+		# Connect buttons to actions
+		self.btnBrowseImageFolder.clicked.connect(self.browse)
+		self.btnOptimize.clicked.connect(self.optimize)		
+		self.btnBrowseFolder.clicked.connect(lambda: open_folder(self.formImageFolder.text()))		
+		self.btnMakeGif.clicked.connect(lambda: self.optimize('build_gif'))
+		self.btnMakeGifBgColor.clicked.connect(self.pickBgColor)
+
+		# Sliders
+		self.hSliderQuality.valueChanged.connect(self.updateQualitySliderLabel)
+
+		# Checkboxes
+		self.chkReplaceSource.stateChanged.connect(self.setOverwriteMode)
+		self.chkFileMode.stateChanged.connect(self.setBrowseMode)
+
+	def setupComboBoxFormats(self):
+		# Set up formats in combobox from config
+		formats = self.user_config.get('formats', ['default', 'WebP', 'png', 'jpeg', 'gif', 'ico', 'tiff', 'bmp'])
+		self.comboBoxFormat.addItems(formats)
+
+	def setupCheckBoxes(self):
+		# Set initial checkbox states based on config
+		self.chkReplaceSource.setChecked(self.user_config.get('replace_source', False))
+		self.chkFileMode.setChecked(self.user_config.get('file_mode', False))
+		self.listWidgetImages.setVisible(self.chkFileMode.isChecked())
+		self.formImageFolder.setVisible(not self.chkFileMode.isChecked())	
+		self.chkOpenWhenFinished.setChecked(self.user_config.get('open_when_finished', False))
 
 	def center_mainwindow(self, w=600, h=300):
 		self.resize(w,h)
@@ -84,7 +95,7 @@ class App(QMainWindow):
 		position = QPoint(cp.x() - w // 2, cp.y() - h // 2)
 		self.move(position)
 
-	def sliderNotif(self):
+	def updateQualitySliderLabel(self):
 		self.labelSliderQualityValue.setText(f'{self.hSliderQuality.value()}')
 
 	def browse(self):
@@ -152,6 +163,61 @@ class App(QMainWindow):
 		with open(workingDirPath(filename), mode, encoding='utf-8') as f:
 			f.write(content)
 
+	def pickBgColor(self) -> None:
+		"""
+        Opens a color dialog to select a background color for the GIF.
+        """
+		color = QColorDialog.getColor()
+		if color.isValid():
+			self.spinBoxMakeGifBgRed.setValue(color.red())
+			self.spinBoxMakeGifBgGreen.setValue(color.green())
+			self.spinBoxMakeGifBgBlue.setValue(color.blue())
+
+	def getGifBgColor(self) -> tuple:
+		"""
+		Retrieves the background color RGB components from UI elements.
+
+		Returns:
+			tuple: A tuple containing RGB components (red, green, blue).
+		"""
+		red = self.spinBoxMakeGifBgRed.value()
+		green = self.spinBoxMakeGifBgGreen.value()
+		blue = self.spinBoxMakeGifBgBlue.value()
+
+		# Ensure RGB values are within valid range (0-255)
+		red = max(0, min(255, red))
+		green = max(0, min(255, green))
+		blue = max(0, min(255, blue))
+
+		return red, green, blue
+	
+	def collectImages(self):
+		images = []
+		# Iterate over the items in the list widget to gather image file names
+		for index in range(self.listWidgetImages.count()):
+			images.append(self.listWidgetImages.item(index))
+		# Extract text from list widget items to get file paths
+		images = [image.text() for image in images]
+		return images
+	
+	def openFolder(self, path: str) -> None:
+		"""
+        Opens the folder containing the specified path. If the path is a file,
+        it opens the parent folder.
+
+        Args:
+            path (str): The path to the file or folder.
+        """
+		# Check if the path is a file
+		if os.path.isfile(path):
+			# If it's a file, get the parent directory
+			folder_path = os.path.dirname(path)
+		else:
+			# If it's a directory, use the path as is
+			folder_path = path
+
+		# Open the folder
+		QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 	
 	def optimize(self, optimization_type: str = 'compress'):
 		''' Compress and resize images inside user defined folder '''
@@ -175,24 +241,23 @@ class App(QMainWindow):
 		if self.chkFileMode.isChecked():
 			# If the widget list has images
 			if self.listWidgetImages.count() > 0:
-				images = []
-				# Iterate over the items in the list widget to gather image file names
-				for index in range(self.listWidgetImages.count()):
-					images.append(self.listWidgetImages.item(index))
-				# Extract text from list widget items to get file paths
-				images = [image.text() for image in images]
+				images = self.collectImages()
 
 				if optimization_type == 'compress':
 					# Compress the images with overwrite option
 					opt.compress(config['overwrite'], images, filemode=True)
 				elif optimization_type == 'build_gif':
 					# Build the GIF from the images
-					opt.buildGif(
+					dest_path = opt.buildGif(
 				  		images,
 						filemode=True,
 						duration=self.spinBoxMakeGifDuration.value(),
-						loop=self.spinBoxMakeGifRepeat.value()
+						loop=self.spinBoxMakeGifRepeat.value(),
+						bgColor=self.getGifBgColor()
 					)
+
+					if dest_path and self.chkOpenWhenFinished.isChecked():
+						self.openFolder(dest_path)
 				else:
 					# Show an error message if the optimization type is not recognized
 					msg_box(msg_text=f'Unknown optimization type: {optimization_type}', msg_title='Optimize image', 

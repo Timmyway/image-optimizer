@@ -1,7 +1,7 @@
 import os, string, random
 from time import time
 from PIL import Image, ImageSequence
-from typing import List
+from typing import List, Optional
 
 class ImageOptimizer(object):
 	"""
@@ -151,6 +151,27 @@ class ImageOptimizer(object):
 			str: The absolute path of the filename.
 		"""
 		return os.path.join(self.path, filename)
+	
+	@staticmethod
+	def calculateAspectRatioHeight(width: int, image: Image.Image) -> int:
+		"""
+		Calculate the new height of the image to maintain the aspect ratio based on the given width.
+
+		Args:
+			width (int): The desired width of the image.
+			image (Image.Image): The original image.
+
+		Returns:
+			int: The new height of the image to maintain the aspect ratio.
+		"""
+		# Calculate the scale factor to resize the image based on the new width
+		wpercent = (width / float(image.size[0]))
+
+		# Calculate the new height to maintain the aspect ratio
+		hSize = int((float(image.size[1]) * float(wpercent)))
+		
+		print(f'-- 01 --> Calculated new height: {hSize}')
+		return hSize
 
 	def resize(self, pillow_image: Image.Image) -> Image.Image:
 		"""
@@ -162,17 +183,11 @@ class ImageOptimizer(object):
 		Returns:
 			PIL.Image.Image: The resized image.
 		"""		
-		# Calculate the scale factor to resize the image based on the new width
-		wpercent = (self.base_width / float(pillow_image.size[0]))
-
-		# Calculate the new height to maintain the aspect ratio
-		hsize = int((float(pillow_image.size[1]) * float(wpercent)))
-
-		print('===========> W', self.base_width)
-		print('===========> Hsize', hsize)
+		hSize = self.calculateAspectRatioHeight(self.base_width, pillow_image)
 		# Resize the image using the calculated dimensions and high-quality resampling
-		if (self.base_width > 0 and hsize > 0):
-			return pillow_image.resize((self.base_width, hsize), Image.Resampling.LANCZOS)
+		if (self.base_width > 0 and hSize > 0):
+			print(f'-- 2 --> Resized to {self.base_width}x{hSize}')
+			return pillow_image.resize((self.base_width, hSize), Image.Resampling.LANCZOS)
 		else:
 			return pillow_image	
 
@@ -241,7 +256,39 @@ class ImageOptimizer(object):
 			progress_value = ((i+1) * 100) // len(self.images)
 			self.parent.signalProgression.emit(progress_value)
 
-	def buildGif(self, images: List[str] = [], filemode: bool = False, duration: int = 30, loop: int = 0) -> None:
+	def getLargestImage(self) -> Optional[Image.Image]:
+		"""
+		Finds the largest image in terms of dimensions from the `self.images` list.
+
+		Returns:
+			Image.Image or None: The largest image found, or None if no images are found or if dimensions are not determined.
+		"""
+		largest_image = None
+		max_area = 0
+
+		# Iterate through all images to find the largest one
+		for image_path in self.images:
+			try:
+				im = Image.open(self.setAbsPath(image_path))
+				width, height = im.size
+				area = width * height
+
+				if area > max_area:
+					max_area = area
+					largest_image = im
+
+			except IOError as e:
+				print(f"Error opening image {image_path}: {e}")
+
+		return largest_image
+
+	def buildGif(self,
+		images: List[str] = [],
+		filemode: bool = False,
+		duration: int = 30,
+		loop: int = 0,
+		bgColor: tuple = (0, 0, 0)
+	) -> None:
 		"""
 		Build a GIF image from multiple images.
 
@@ -250,6 +297,9 @@ class ImageOptimizer(object):
 			filemode (bool): If True, the built GIF image will be saved in the same directory as the first image in the list.
 			duration (int): The duration (in milliseconds) for each frame of the GIF.
 			loop (int): The number of times the GIF should loop. 0 means loop indefinitely.
+			bgColor (tuple): Background color as RGB.
+		Returns:
+			dest_path (str): Destination path of the final GIF file.
 		"""
 		# Set the list of images to be processed
 		if images:
@@ -258,19 +308,22 @@ class ImageOptimizer(object):
 			self.images = ImageOptimizer.parseImages(self.parent.basepath, self.path)
 
 		frames = []
-		first_image = Image.open(self.setAbsPath(self.images[0]))
-		base_width, base_height = first_image.size
+		# first_image = Image.open(self.setAbsPath(self.images[0]))		
+		largest_image = self.getLargestImage()
+		max_width, max_height = largest_image.size
+		if self.base_width > 0:
+			max_width = self.base_width
+			max_height = self.calculateAspectRatioHeight(max_width, largest_image)
 		for i, image_path in enumerate(self.images):
 			# Open the image
-			im = Image.open(self.setAbsPath(image_path))
-			# Calculate the scaling factor for maintaining the aspect ratio
-			wpercent = (base_width / float(im.size[0]))
-			hsize = int((float(im.size[1]) * float(wpercent)))
+			im = Image.open(self.setAbsPath(image_path))			
 			# Resize the image while maintaining the aspect ratio
-			resized_frame = im.resize((base_width, hsize), Image.LANCZOS)
+			resized_frame = self.resize(im)			
 			# Create a black background if the image is smaller than the base size
-			background = Image.new("RGB", (base_width, base_height), "black")
-			background.paste(resized_frame, (0, (base_height - hsize) // 2))
+			background = Image.new("RGB", (max_width, max_height), bgColor)
+			# Center the image on the background
+			position = ((max_width - resized_frame.width) // 2, (max_height - resized_frame.height) // 2)
+			background.paste(resized_frame, position)
 			# Append the resized frame to the frames list
 			frames.append(background)
 
@@ -297,6 +350,7 @@ class ImageOptimizer(object):
 				optimize=True
 			)
 		self.parent.signalProgression.emit(100)
+		return dest_path
 
 # opt = ImageOptimizer(r'C:\Users\Usera\Pictures\bank\pixabay')
 # opt.compress()

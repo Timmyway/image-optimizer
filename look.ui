@@ -71,6 +71,10 @@ QTextEdit#txtOutput {
 QPushButton#btnOptimize, QPushButton#btnMakeGif {
 	border-color: #66AC00;
 }
+QPushButton#btnMakeGifBgColor {		
+	border: 2px solid #263238;
+	padding: 3px 5px;
+}
 QPushButton#btnOptimize:hover, QPushButton#btnMakeGif:hover {
 	background-color: #AFFC41;
 }
@@ -390,6 +394,13 @@ QLabel#labelGeneralOptions, QLabel#labelGifOptions {
              </property>
             </widget>
            </item>
+           <item row="1" column="2">
+            <widget class="QCheckBox" name="chkOpenWhenFinished">
+             <property name="text">
+              <string>Open when finished</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -450,14 +461,50 @@ QLabel#labelGeneralOptions, QLabel#labelGifOptions {
          <property name="bottomMargin">
           <number>5</number>
          </property>
-         <item alignment="Qt::AlignLeft">
+         <item>
           <widget class="QFrame" name="makeGifFrame">
            <layout class="QGridLayout" name="gridLayout_3">
             <property name="sizeConstraint">
              <enum>QLayout::SetDefaultConstraint</enum>
             </property>
+            <item row="2" column="3">
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <property name="leftMargin">
+               <number>10</number>
+              </property>
+              <property name="rightMargin">
+               <number>10</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="labelMakeGifRepeat">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Repeat</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBoxMakeGifRepeat">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="maximum">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
             <item row="2" column="2">
-             <layout class="QVBoxLayout" name="verticalLayout">
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
               <property name="leftMargin">
                <number>10</number>
               </property>
@@ -501,43 +548,7 @@ QLabel#labelGeneralOptions, QLabel#labelGifOptions {
               </item>
              </layout>
             </item>
-            <item row="2" column="3">
-             <layout class="QVBoxLayout" name="verticalLayout_2">
-              <property name="leftMargin">
-               <number>10</number>
-              </property>
-              <property name="rightMargin">
-               <number>10</number>
-              </property>
-              <item>
-               <widget class="QLabel" name="labelMakeGifRepeat">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Repeat</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QSpinBox" name="spinBoxMakeGifRepeat">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="maximum">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item row="0" column="2" colspan="5">
+            <item row="0" column="2" colspan="4">
              <widget class="QLabel" name="labelGifOptions">
               <property name="text">
                <string>GIF Maker options</string>
@@ -546,6 +557,51 @@ QLabel#labelGeneralOptions, QLabel#labelGifOptions {
                <enum>Qt::AutoText</enum>
               </property>
              </widget>
+            </item>
+            <item row="2" column="4">
+             <layout class="QHBoxLayout" name="horizontalLayout_11">
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string>RGB</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBoxMakeGifBgRed">
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBoxMakeGifBgGreen">
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBoxMakeGifBgBlue">
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnMakeGifBgColor">
+                <property name="text">
+                 <string>pick</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
