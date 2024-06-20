@@ -8,5 +8,6 @@
     "file_mode": true,
     "resize_width": 0,
     "compression_quality": 80,
-    "clear_after_upload": false
+    "clear_after_upload": false,
+    "open_when_finished": false
 }
