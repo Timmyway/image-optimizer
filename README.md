@@ -15,32 +15,58 @@
 
 ## Description
 
-Desktop app to resize, convert or/and compress images inside a defined folder.
+This desktop application allows users to resize, convert, and/or compress images within a specified folder. The intuitive interface provides options to fine-tune these operations, ensuring that users can optimize their images according to their specific needs.
+I can also build a GIF file from multiple images, and configure options like duration, background color, repeat, resize.
 
-1. Browse button : you can select a folder that contains all images you want to optimize.
+1. Browse button : you can select image files that you want to optimize.
 2. Optional : you can fine tune options.
+
+### Image processing options
 
 #### Resize width (from 0px to 1920):
 
-- You can put any number between 0 to 1920.
-- If its value is smaller than the width of the original image, the latter will be resized by applying this new value.
-Ex: if your image has a width of 1600px, if the resize width's value is 1200px, it will be resized to 1200px because 1200px is lower than 1600px. 
-If we have chosen a value of 1800px, there would be no resize operation because 1800px is bigger than the original size of 1600px.
-- If its value is 0 then no resizing will be applied.
+- Range: 0px to 1920px
+- Users can input any number between 0 and 1920.
+- If the input value is smaller than the original image's width, the image will be resized to the new width.
+Example: An image with an original width of 1600px will be resized to 1200px if the resize width is set to 1200px.
+If the resize width is set to 1800px (which is larger than the original width of 1600px), no resizing will occur.
+- If the resize width is set to 0, no resizing will be applied.
 
 #### Quality (slider):
 
-- Quality of the output image varies from 0 to 100 (100 being the best possible quality).
+- Range: 0 to 100
+- The quality of the output image can be adjusted using the slider.
+- A value of 100 represents the best possible quality, while 0 represents the lowest.
 
 #### Ext (dropdown selection):
+
+- Options: Various image formats (e.g., JPEG, PNG, WEBP etc.)
 - If its value is different from "default", then the output image will be converted to the selected format.
 
 #### Replace original (checkbox):
-- By default, the application does not replace the original image. If you want to overwrite the original image then you should check "replace original".
+- If the selected value is different from "default", the output image will be converted to the chosen format.
+
+#### Replace Original (Checkbox)
+- By default, the application does not overwrite the original images.
+- If the "Replace original" checkbox is checked, the original images will be overwritten with the optimized versions.
+
+### GIF Creation Options
+
+#### Duration (Input number)
+- Sets how long each frame in the GIF will be displayed. Enter the duration in milliseconds.
+
+#### Background color
+- Choose a background color for the GIF by clicking the "Pick" button.
+
+#### Repeat
+- Determines how many times the GIF should repeat its animation. Enter 0 for infinite looping.
+
+#### Resize
+- Before creating the GIF, users can resize the images, similar to the image resizing functionality. For more details, refer to the image processing options.
 
 ## Technologies
 
-- Python 3.8 32bit
+- Python 3.12 32bit
 - PyQT6
 
 [Back To The Top](#read-me-template)
@@ -52,7 +78,7 @@ If we have chosen a value of 1800px, there would be no resize operation because 
 launch "app.py" file by lanching in your terminal: python app.py.
 
 ## Installation
-First of all this project is tested on Python 3.8 and PyQt6 6.3.1. You should install a virtual environnement for well organization.
+First of all this project is tested on Python 3.12 and PyQt6 6.3.1. You should install a virtual environnement for well organization.
 
 Then you may have to install those dependencies:
 - pip install PyQt6 pillow requests
