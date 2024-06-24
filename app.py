@@ -61,7 +61,7 @@ class App(QMainWindow):
 	def setupWidgetConnections(self):
 		# Connect buttons to actions
 		self.btnBrowseImageFolder.clicked.connect(self.browse)
-		self.btnOptimize.clicked.connect(self.optimize)		
+		self.btnOptimize.clicked.connect(lambda: self.optimize('compress'))
 		self.btnBrowseFolder.clicked.connect(lambda: open_folder(self.formImageFolder.text()))		
 		self.btnMakeGif.clicked.connect(lambda: self.optimize('build_gif'))
 		self.btnMakeGifBgColor.clicked.connect(self.pickBgColor)
@@ -259,6 +259,7 @@ class App(QMainWindow):
 					if dest_path and self.chkOpenWhenFinished.isChecked():
 						self.openFolder(dest_path)
 				else:
+					print('===================>', optimization_type)
 					# Show an error message if the optimization type is not recognized
 					msg_box(msg_text=f'Unknown optimization type: {optimization_type}', msg_title='Optimize image', 
 							autoclose=True, timeout=2000, msg_type=QMessageBox.Icon.Warning)
