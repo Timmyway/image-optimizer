@@ -172,6 +172,27 @@ class ImageOptimizer(object):
 		
 		print(f'-- 01 --> Calculated new height: {hSize}')
 		return hSize
+	
+	@staticmethod
+	def calculateAspectRatioWidth(height: int, image: Image.Image) -> int:
+		"""
+		Calculate the new width of the image to maintain the aspect ratio based on the given height.
+
+		Args:
+			height (int): The desired height of the image.
+			image (Image.Image): The original image.
+
+		Returns:
+			int: The new width of the image to maintain the aspect ratio.
+		"""
+		# Calculate the scale factor to resize the image based on the new height
+		hpercent = (height / float(image.size[1]))
+
+		# Calculate the new width to maintain the aspect ratio
+		wSize = int((float(image.size[0]) * float(hpercent)))
+		
+		print(f'-- 01 --> Calculated new width: {wSize}')
+		return wSize
 
 	def resize(self, pillow_image: Image.Image) -> Image.Image:
 		"""
@@ -242,14 +263,17 @@ class ImageOptimizer(object):
 			print('Format: ', format)
 
 			# Convert the image to RGB mode if the format is JPEG, as JPEG does not support RGBA
-			if (format == 'jpg'):
+			if (format == 'jpg' or format == 'jpeg') and im.mode == 'RGBA':
 				im = im.convert('RGB')
 			
 			# Save the image with the specified quality and format
 			if format == 'default':
 				im.save(dest_path, quality=self.config.get('quality', 80), optimize=True)
 			else:
-				print('====> Save into this format: ', format)
+				# Fix app crashing when saving as jpg
+				if format == 'jpg':
+					format = 'jpeg'
+				print('-- 01 -> Save into this format:', format)
 				im.save(dest_path, quality=self.config.get('quality', 80), optimize=True, format=format)
 
 			# Emit the progress signal
@@ -311,19 +335,25 @@ class ImageOptimizer(object):
 		# first_image = Image.open(self.setAbsPath(self.images[0]))		
 		largest_image = self.getLargestImage()
 		max_width, max_height = largest_image.size
+
 		if self.base_width > 0:
 			max_width = self.base_width
 			max_height = self.calculateAspectRatioHeight(max_width, largest_image)
+
 		for i, image_path in enumerate(self.images):
 			# Open the image
 			im = Image.open(self.setAbsPath(image_path))			
+
 			# Resize the image while maintaining the aspect ratio
 			resized_frame = self.resize(im)			
+
 			# Create a black background if the image is smaller than the base size
 			background = Image.new("RGB", (max_width, max_height), bgColor)
+
 			# Center the image on the background
 			position = ((max_width - resized_frame.width) // 2, (max_height - resized_frame.height) // 2)
 			background.paste(resized_frame, position)
+
 			# Append the resized frame to the frames list
 			frames.append(background)
 
