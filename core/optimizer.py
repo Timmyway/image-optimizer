@@ -172,27 +172,6 @@ class ImageOptimizer(object):
 		
 		print(f'-- 01 --> Calculated new height: {hSize}')
 		return hSize
-	
-	@staticmethod
-	def calculateAspectRatioWidth(height: int, image: Image.Image) -> int:
-		"""
-		Calculate the new width of the image to maintain the aspect ratio based on the given height.
-
-		Args:
-			height (int): The desired height of the image.
-			image (Image.Image): The original image.
-
-		Returns:
-			int: The new width of the image to maintain the aspect ratio.
-		"""
-		# Calculate the scale factor to resize the image based on the new height
-		hpercent = (height / float(image.size[1]))
-
-		# Calculate the new width to maintain the aspect ratio
-		wSize = int((float(image.size[0]) * float(hpercent)))
-		
-		print(f'-- 01 --> Calculated new width: {wSize}')
-		return wSize
 
 	def resize(self, pillow_image: Image.Image) -> Image.Image:
 		"""
@@ -213,72 +192,51 @@ class ImageOptimizer(object):
 			return pillow_image	
 
 	def compress(self,
-			overwrite: bool = False,
-			images: List[str] = None,
-			filemode: bool = False
-		) -> None:
-		"""
-		Compress and resize images based on configuration settings.
+             overwrite: bool = False,
+             images: List[str] = None,
+             filemode: bool = False) -> None:
+		"""Compress and resize images; automatically optimizes GIFs using reduceGifSize."""
 
-		Args:
-			overwrite (bool): Whether to overwrite the original images. Defaults to False.
-			images (list[str]): List of image file paths to be compressed. If None, parse images from the base path. Defaults to None.
-			filemode (bool): Whether to use file mode for saving the images. Defaults to False.
-		"""
-		# Set the list of images to be processed
-		if images:
-			self.images = images
-		else:
-			self.images = ImageOptimizer.parseImages(self.parent.basepath, self.path)
+		self.images = images or ImageOptimizer.parseImages(self.parent.basepath, self.path)
 
-		# Process each image
-		for i,image_path in enumerate(self.images):
-			# Open the image
-			im = Image.open(self.setAbsPath(image_path))
-			
-			# Resize the image if the width exceeds the specified base width
-			w, h = im.size
-			if self.base_width:				
-				if w > self.base_width:
+		for i, image_path in enumerate(self.images):
+			abs_path = self.setAbsPath(image_path)
+			ext = os.path.splitext(image_path)[1].lower()
+
+			# Generate filename and destination path
+			format = self.config.get("format", "default")
+			filename = ImageOptimizer.setName(
+				image_path,
+				overwrite,
+				timestamp=self.config.get("timestamp", True),
+				prefix=self.config.get("prefix", "-export"),
+				extension="gif" if ext == ".gif" else format
+			)
+			dest_path = os.path.join(os.path.dirname(image_path), filename) if filemode else self.setAbsPath(filename)
+
+			if ext == ".gif":
+				# Map quality to colors and frame_step
+				q = self.config.get("quality", 80)
+				colors = max(2, min(256, q))
+				frame_step = max(1, int(12 - q / 10))
+				self.reduceGifSize(abs_path, dest_path, colors=colors, frame_step=frame_step, max_width=self.base_width or None)
+			else:
+				# Open, resize, and save normal images
+				im = Image.open(abs_path)
+				if self.base_width and im.width > self.base_width:
 					im = self.resize(im)
 
-			# Set the export filename with options like timestamp and prefix
-			format = self.config.get('format', 'default')
-			filename = ImageOptimizer.setName(image_path, 
-				overwrite,
-				timestamp=self.config.get('timestamp', True),
-				prefix=self.config.get('prefix', '-export'), 
-				extension=format
-			)
-			
-			# File mode: determine the destination path for the image
-			if filemode:				
-				dest_path = os.path.join(os.path.dirname(image_path), filename)
-			else:
-				dest_path = self.setAbsPath(filename)
+				if format.lower() in ("jpg", "jpeg"):
+					im = im.convert("RGB")
 
-			# Print debug information
-			# print('Save to ', dest_path)
-			print(dest_path, filename)
-			print('Format: ', format)
+				save_args = {"quality": self.config.get("quality", 80), "optimize": True}
+				if format != "default":
+					save_args["format"] = "JPEG" if format.lower() in ("jpg", "jpeg") else format.upper()
 
-			# Convert the image to RGB mode if the format is JPEG, as JPEG does not support RGBA
-			if (format == 'jpg' or format == 'jpeg') and im.mode == 'RGBA':
-				im = im.convert('RGB')
-			
-			# Save the image with the specified quality and format
-			if format == 'default':
-				im.save(dest_path, quality=self.config.get('quality', 80), optimize=True)
-			else:
-				# Fix app crashing when saving as jpg
-				if format == 'jpg':
-					format = 'jpeg'
-				print('-- 01 -> Save into this format:', format)
-				im.save(dest_path, quality=self.config.get('quality', 80), optimize=True, format=format)
+				im.save(dest_path, **save_args)
 
-			# Emit the progress signal
-			progress_value = ((i+1) * 100) // len(self.images)
-			self.parent.signalProgression.emit(progress_value)
+			# Emit progress
+			self.parent.signalProgression.emit(((i + 1) * 100) // len(self.images))
 
 	def getLargestImage(self) -> Optional[Image.Image]:
 		"""
@@ -335,25 +293,19 @@ class ImageOptimizer(object):
 		# first_image = Image.open(self.setAbsPath(self.images[0]))		
 		largest_image = self.getLargestImage()
 		max_width, max_height = largest_image.size
-
 		if self.base_width > 0:
 			max_width = self.base_width
 			max_height = self.calculateAspectRatioHeight(max_width, largest_image)
-
 		for i, image_path in enumerate(self.images):
 			# Open the image
 			im = Image.open(self.setAbsPath(image_path))			
-
 			# Resize the image while maintaining the aspect ratio
 			resized_frame = self.resize(im)			
-
 			# Create a black background if the image is smaller than the base size
 			background = Image.new("RGB", (max_width, max_height), bgColor)
-
 			# Center the image on the background
 			position = ((max_width - resized_frame.width) // 2, (max_height - resized_frame.height) // 2)
 			background.paste(resized_frame, position)
-
 			# Append the resized frame to the frames list
 			frames.append(background)
 
@@ -381,6 +333,79 @@ class ImageOptimizer(object):
 			)
 		self.parent.signalProgression.emit(100)
 		return dest_path
+	
+	def reduceGifSize(
+		self,
+		gif_path: str,
+		output_path: Optional[str] = None,
+		colors: int = 24,
+		frame_step: int = 6,
+		max_width: Optional[int] = None,
+	) -> str:
+			"""
+			Reduce the file size of an animated GIF with optional downscaling.
+
+			Args:
+				gif_path (str): Path to the original GIF.
+				output_path (str, optional): Destination path.
+					Defaults to '<basename>-optimized.gif'.
+				colors (int): Max colors to keep (lower = smaller size).
+				frame_step (int): Keep every n-th frame.
+				max_width (int, optional): Resize each frame to this width
+					(maintains aspect ratio). If None, keep original size.
+
+			Returns:
+				str: Path to the optimized GIF.
+			"""
+			if output_path is None:
+				base, ext = os.path.splitext(gif_path)
+				output_path = f"{base}-optimized{ext}"
+
+			im = Image.open(gif_path)
+			frames, durations = [], []
+			total_frames = im.n_frames
+
+			for i in range(0, total_frames, frame_step):
+				im.seek(i)
+				frame = im.copy()
+
+				# --- Optional downscale ---
+				if max_width:
+					w, h = frame.size
+					if w > max_width:
+						ratio = max_width / float(w)
+						new_h = int(h * ratio)
+						frame = frame.resize((max_width, new_h), Image.Resampling.LANCZOS)
+
+				# Maintain original speed
+				duration = im.info.get("duration", 100) * frame_step
+				durations.append(duration)
+
+				# Reduce color palette
+				frame = frame.convert("P", palette=Image.ADAPTIVE, colors=colors)
+				frames.append(frame)
+
+				# Progress feedback
+				progress = int(((i + 1) / total_frames) * 100)
+				self.parent.signalProgression.emit(progress)
+
+			frames[0].save(
+				output_path,
+				save_all=True,
+				append_images=frames[1:],
+				optimize=True,
+				loop=im.info.get("loop", 0),
+				duration=durations,
+				disposal=2,
+			)
+
+			before = os.path.getsize(gif_path) / 1024
+			after = os.path.getsize(output_path) / 1024
+			print(f"Original: {before:.1f} KB → Optimized: {after:.1f} KB")
+
+			self.parent.signalProgression.emit(100)
+			return output_path
+
 
 # opt = ImageOptimizer(r'C:\Users\Usera\Pictures\bank\pixabay')
 # opt.compress()
