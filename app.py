@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QColorDialog
 from PyQt6.QtGui import QGuiApplication, QIcon, QShortcut, QKeySequence, QDesktopServices
-from PyQt6.QtCore import QPoint, QDir, pyqtSignal, QUrl
+from PyQt6.QtCore import QPoint, QDir, pyqtSignal, QUrl, Qt
 from PyQt6 import uic
 # Built-in module :
 import sys, os
@@ -9,6 +9,32 @@ from core.optimizer import ImageOptimizer
 from ui_util import msg_box, open_folder, ImageHelper, JsonConfig
 
 basedir = os.path.dirname(__file__)
+
+# ============ WINDOWS 11 COMPATIBILITY - MUST RUN BEFORE QApplication ============
+def setup_windows11_compatibility():
+	"""Configure Qt for Windows 11 compatibility before QApplication is created"""
+	# Note: In PyQt6, high DPI scaling is enabled by default (unlike PyQt5)
+	# We only need to set the scale factor rounding policy
+	
+	# Fix 1: Set High DPI scale factor rounding policy
+	if hasattr(Qt, 'HighDpiScaleFactorRoundingPolicy'):
+		QApplication.setHighDpiScaleFactorRoundingPolicy(
+			Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+		)
+	
+	# Fix 2: For Windows 11, configure platform theme
+	if sys.platform == 'win32':
+		try:
+			import platform
+			win_version = platform.release()
+			if win_version and int(win_version) >= 10:  # Windows 10 and 11
+				os.environ['QT_QPA_PLATFORM'] = 'windows:darkmode=2'
+		except:
+			pass
+
+# Call this immediately when module loads
+setup_windows11_compatibility()
+# ================================================================================
 
 def resourcePath(relativePath):
 	""" Get absolute path to resource, works for dev and for PyInstaller """
@@ -306,6 +332,10 @@ class App(QMainWindow):
 		
 def main(): 
 	app = QApplication(sys.argv)
+	
+	# Set a Windows 11 compatible style (Fusion works well on all Windows versions)
+	app.setStyle('Fusion')
+	
 	app.setWindowIcon(QIcon(resourcePath('fav.ico')))
 	form = App()
 	form.show()

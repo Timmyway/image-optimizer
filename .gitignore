@@ -4,3 +4,4 @@ dist/
 bin/
 config.json
 io_crypt.py
+run.bat

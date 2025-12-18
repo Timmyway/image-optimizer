@@ -41,4 +41,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='fav.ico',  # Added: Set application icon
+    manifest='app.manifest',  # Added: Windows 11 DPI awareness manifest
 )
