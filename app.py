@@ -101,7 +101,11 @@ class App(QMainWindow):
 
 	def setupComboBoxFormats(self):
 		# Set up formats in combobox from config
-		formats = self.user_config.get('formats', ['default', 'WebP', 'png', 'jpeg', 'gif', 'ico', 'tiff', 'bmp'])
+		formats = self.user_config.get(
+			'formats',
+			['default', 'webp', 'png', 'jpg', 'gif', 'ico', 'tiff', 'bmp']
+		)
+  
 		self.comboBoxFormat.addItems(formats)
 
 	def setupCheckBoxes(self):
@@ -139,18 +143,17 @@ class App(QMainWindow):
 			self.formImageFolder.setText(QDir.toNativeSeparators(folder))
 
 	def chooseFiles(self):
-		''' Open a dialog to let user choose multiple files on his computer '''		
-		dialog = QFileDialog()
-		dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
-		images = dialog.getOpenFileNames(self, 
-			"Select files", self.last_folder,
-			"images (*.webp *.png *.jpeg *.jpg *.gif *.ico *.bmp)"
+		''' Open a dialog to let user choose multiple files on his computer '''
+		images = QFileDialog.getOpenFileNames(
+			self,
+			"Select files",
+			self.last_folder,
+			self.getImageFileFilter()
 		)
-		try:
+
+		if images[0]:
 			self.last_folder = os.path.dirname(images[0][0])
 			self.listWidgetImages.insertItems(0, images[0])
-		except IndexError:
-			pass
 
 	def removeImages(self):
 		selected_images = self.listWidgetImages.selectedItems()
@@ -329,6 +332,17 @@ class App(QMainWindow):
 		self.listWidgetImages.setVisible(file_mode)
 		self.formImageFolder.setEnabled(not file_mode)
 		self.formImageFolder.setVisible(not file_mode)		
+  
+	def getImageFileFilter(self):
+		formats = self.user_config.get('formats', [])
+
+		extensions = [
+			f'*.{fmt.lower()}'
+			for fmt in formats
+			if fmt.lower() != 'default'
+		]
+
+		return f"Images ({' '.join(extensions)})"
 		
 def main(): 
 	app = QApplication(sys.argv)

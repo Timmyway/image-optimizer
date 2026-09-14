@@ -41,7 +41,7 @@ class ImageOptimizer(object):
 			Build a GIF image from multiple images.
 	"""
 
-	allowed_extensions = ['WebP', 'png', 'jpeg', 'jpg', 'gif', 'ico', 'tiff' 'bmp']
+	allowed_extensions = ['webp', 'png', 'jpeg', 'jpg', 'gif', 'ico', 'tiff', 'bmp']
 
 	def __init__(self, parent, path, config={
 			'quality': 80, 
@@ -205,12 +205,14 @@ class ImageOptimizer(object):
 
 			# Generate filename and destination path
 			format = self.config.get("format", "default")
+			normalized_format = format.lower()
+   
 			filename = ImageOptimizer.setName(
 				image_path,
 				overwrite,
 				timestamp=self.config.get("timestamp", True),
 				prefix=self.config.get("prefix", "-export"),
-				extension="gif" if ext == ".gif" else format
+				extension="gif" if ext == ".gif" else normalized_format
 			)
 			dest_path = os.path.join(os.path.dirname(image_path), filename) if filemode else self.setAbsPath(filename)
 
@@ -223,15 +225,24 @@ class ImageOptimizer(object):
 			else:
 				# Open, resize, and save normal images
 				im = Image.open(abs_path)
+    
 				if self.base_width and im.width > self.base_width:
-					im = self.resize(im)
+					im = self.resize(im)				
 
-				if format.lower() in ("jpg", "jpeg"):
+				if normalized_format in ("jpg", "jpeg"):
 					im = im.convert("RGB")
 
-				save_args = {"quality": self.config.get("quality", 80), "optimize": True}
-				if format != "default":
-					save_args["format"] = "JPEG" if format.lower() in ("jpg", "jpeg") else format.upper()
+				save_args = {
+					"quality": self.config.get("quality", 80),
+					"optimize": True
+				}
+    
+				if normalized_format != "default":
+					save_args["format"] = (
+						"JPEG"
+						if normalized_format in ("jpg", "jpeg")
+						else normalized_format.upper()
+					)
 
 				im.save(dest_path, **save_args)
 
